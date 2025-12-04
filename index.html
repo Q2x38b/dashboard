@@ -35,6 +35,12 @@
           If this is your first time, an account will be created automatically.
         </p>
         <p id="auth-error" class="auth-error"></p>
+        <button id="auth-offline" class="auth-offline" type="button">
+          Work offline
+        </button>
+        <p id="auth-offline-hint" class="auth-hint auth-offline-hint">
+          We'll keep everything on this device until Supabase recovers.
+        </p>
       </div>
     </div>
   </div>
@@ -66,6 +72,9 @@
             <path class="moon-path" d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
           </svg>
         </button>
+        <span id="offline-pill" class="offline-pill" aria-live="polite">
+          Offline mode
+        </span>
 
         <button id="logout-btn" class="social-button" style="width:auto;padding:0 0.75rem;">
           <span class="social-button-bg"></span>

@@ -10,6 +10,7 @@ let isEditMode = false;
 let saveTimeout = null;
 let isSaving = false;
 let pomodoroIntervalId = null;
+let forcedOfflineMode = false;
 
 // ---------- Utilities ----------
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -92,6 +93,68 @@ function createDefaultState() {
       { id: createWidgetId(), type: "stats" },
     ],
   };
+}
+
+// ---------- Offline helpers ----------
+function setOfflineIndicator(visible) {
+  const pill = document.getElementById("offline-pill");
+  if (pill) {
+    pill.classList.toggle("offline-pill--visible", !!visible);
+  }
+}
+
+function showOfflineModeOption(message) {
+  const offlineBtn = document.getElementById("auth-offline");
+  const offlineHint = document.getElementById("auth-offline-hint");
+  if (offlineBtn) {
+    offlineBtn.style.display = "inline-flex";
+  }
+  if (offlineHint) {
+    offlineHint.style.display = "block";
+    if (message) {
+      offlineHint.textContent = message;
+    }
+  }
+}
+
+function isSupabaseEmailFailure(error) {
+  if (!error) return false;
+  const status = typeof error.status === "number" ? error.status : Number(error.status);
+  const code = (error.error_code || error.code || "").toString().toLowerCase();
+  const message = (error.message || error.msg || "").toLowerCase();
+  if (!Number.isNaN(status) && status >= 500) return true;
+  if (code.includes("unexpected_failure")) return true;
+  return (
+    message.includes("error sending confirmation email") ||
+    message.includes("failed to send confirmation email")
+  );
+}
+
+function handleSupabaseEmailFailure(statusEl) {
+  const msg =
+    "Supabase email is unavailable. You can keep working offline and sync once it recovers.";
+  if (statusEl) {
+    statusEl.textContent = msg;
+  }
+  showOfflineModeOption(msg);
+}
+
+function enterOfflineMode(message) {
+  if (forcedOfflineMode) return;
+  forcedOfflineMode = true;
+  setOfflineIndicator(true);
+  supabaseClient = null;
+  const backup = localStorage.getItem("dashboardStateBackup");
+  dashboardState = backup ? JSON.parse(backup) : createDefaultState();
+  currentUser = { id: "local-offline" };
+  if (message) {
+    const offlineHint = document.getElementById("auth-offline-hint");
+    if (offlineHint) {
+      offlineHint.textContent = message;
+    }
+  }
+  updateAuthUI();
+  renderDashboard();
 }
 
 function getFaviconUrl(url) {
@@ -754,6 +817,12 @@ async function initSupabase() {
   // onAuthStateChange
   supabaseClient.auth.onAuthStateChange((event, session) => {
     currentUser = session?.user ?? null;
+    if (currentUser) {
+      forcedOfflineMode = false;
+      setOfflineIndicator(false);
+    } else if (!forcedOfflineMode) {
+      setOfflineIndicator(false);
+    }
     updateAuthUI();
     if (currentUser) {
       loadDashboardState().then(renderDashboard);
@@ -764,6 +833,10 @@ async function initSupabase() {
 
   const { data } = await supabaseClient.auth.getSession();
   currentUser = data.session?.user ?? null;
+  if (currentUser) {
+    forcedOfflineMode = false;
+    setOfflineIndicator(false);
+  }
   updateAuthUI();
   if (currentUser) {
     await loadDashboardState();
@@ -793,7 +866,13 @@ async function handleAuthSubmit() {
   const password = passwordInput.value.trim();
 
   if (!supabaseClient) {
-    errorEl.textContent = "Supabase is not configured. Set SUPABASE_URL & key in app.js.";
+    const msg = forcedOfflineMode
+      ? "Supabase sync is paused while you're offline. Reload when it's back to sign in."
+      : "Supabase is not configured. Set SUPABASE_URL & key in app.js.";
+    errorEl.textContent = msg;
+    if (forcedOfflineMode) {
+      showOfflineModeOption(msg);
+    }
     return;
   }
 
@@ -822,6 +901,10 @@ async function handleAuthSubmit() {
     });
 
     if (error) {
+      if (isSupabaseEmailFailure(error)) {
+        handleSupabaseEmailFailure(errorEl);
+        return;
+      }
       const msg = (error.message || "").toLowerCase();
 
       // If user already exists, we treat this as a login attempt via magic link
@@ -851,15 +934,26 @@ async function handleAuthSubmit() {
         "Account created. Check your email to confirm. After that, use the magic link to log in.";
     }
   } catch (e) {
+    if (isSupabaseEmailFailure(e)) {
+      handleSupabaseEmailFailure(errorEl);
+      return;
+    }
     console.error("Unexpected sign-up error:", e);
     errorEl.textContent = "Unexpected error.";
   }
 }
 
 async function handleLogout() {
+  forcedOfflineMode = false;
+  setOfflineIndicator(false);
   if (!supabaseClient) {
     currentUser = null;
+    dashboardState = null;
     updateAuthUI();
+    const errorEl = document.getElementById("auth-error");
+    if (errorEl) {
+      errorEl.textContent = "Reload the page once Supabase is back online to sign in.";
+    }
     return;
   }
   await supabaseClient.auth.signOut();
@@ -886,6 +980,13 @@ function initEvents() {
   if (authPassword) {
     authPassword.addEventListener("keydown", (e) => {
       if (e.key === "Enter") handleAuthSubmit();
+    });
+  }
+
+  const offlineBtn = document.getElementById("auth-offline");
+  if (offlineBtn) {
+    offlineBtn.addEventListener("click", () => {
+      enterOfflineMode("Offline mode enabled. Data will stay on this device until Supabase is back.");
     });
   }
 
@@ -923,17 +1024,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // If Supabase isn't configured, fall back to local-only mode
   if (!supabaseClient) {
-    const backup = localStorage.getItem("dashboardStateBackup");
-    dashboardState = backup ? JSON.parse(backup) : createDefaultState();
-    currentUser = { id: "local-user" };
-    updateAuthUI();
-    renderDashboard();
+    enterOfflineMode("Supabase is not configured. Using offline mode.");
   }
 });
 
 async function sendMagicLink(email, statusEl) {
   if (!supabaseClient) {
-    if (statusEl) statusEl.textContent = "Supabase is not configured.";
+    if (statusEl) {
+      statusEl.textContent = forcedOfflineMode
+        ? "Supabase sync is paused while you're offline. Reload later to request a magic link."
+        : "Supabase is not configured.";
+    }
+    if (forcedOfflineMode) {
+      const offlineMessage = statusEl ? statusEl.textContent : "";
+      showOfflineModeOption(offlineMessage);
+    }
     return;
   }
 
@@ -949,6 +1054,10 @@ async function sendMagicLink(email, statusEl) {
     });
 
     if (error) {
+      if (isSupabaseEmailFailure(error)) {
+        handleSupabaseEmailFailure(statusEl);
+        return;
+      }
       console.error("Magic link error:", error);
       if (statusEl) statusEl.textContent = error.message || "Could not send magic link.";
       return;
@@ -958,6 +1067,10 @@ async function sendMagicLink(email, statusEl) {
       statusEl.textContent = "Magic link sent. Check your email to log in.";
     }
   } catch (e) {
+    if (isSupabaseEmailFailure(e)) {
+      handleSupabaseEmailFailure(statusEl);
+      return;
+    }
     console.error("sendMagicLink exception:", e);
     if (statusEl) statusEl.textContent = "Unexpected error sending magic link.";
   }
