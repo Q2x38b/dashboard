@@ -1,6 +1,6 @@
 // ---------- Supabase config ----------
-const SUPABASE_URL = "https://YOUR-PROJECT-ID.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR-ANON-KEY";
+const SUPABASE_URL = "https://fpgnyccusdrgzolbinpt.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwZ255Y2N1c2RyZ3pvbGJpbnB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4Njk1MzUsImV4cCI6MjA4MDQ0NTUzNX0.4u6a9jg3GAskuWLeGhYGQVi8VQUywyWmGGCJtzQ7008";
 
 let supabaseClient = null;
 let currentUser = null;
@@ -785,47 +785,73 @@ function updateAuthUI() {
 }
 
 async function handleAuthSubmit() {
-  const email = document.getElementById("auth-email").value.trim();
-  const password = document.getElementById("auth-password").value.trim();
+  const emailInput = document.getElementById("auth-email");
+  const passwordInput = document.getElementById("auth-password");
   const errorEl = document.getElementById("auth-error");
+
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
 
   if (!supabaseClient) {
     errorEl.textContent = "Supabase is not configured. Set SUPABASE_URL & key in app.js.";
     return;
   }
 
-  if (!email || !password) {
-    errorEl.textContent = "Enter email and password.";
+  if (!email) {
+    errorEl.textContent = "Enter your email.";
     return;
   }
 
-  errorEl.textContent = "Signing in...";
-  try {
-    let { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  // If no password is provided, assume this is a returning user and send a magic link.
+  if (!password) {
+    await sendMagicLink(email, errorEl);
+    return;
+  }
 
-    if (error && error.message && error.message.toLowerCase().includes("invalid login")) {
-      // Try sign-up if login fails
-      const signUpRes = await supabaseClient.auth.signUp({ email, password });
-      data = signUpRes.data;
-      error = signUpRes.error;
-    }
+  // With a password: try to create account.
+  // If the user already exists, fall back to magic link login.
+  errorEl.textContent = "Creating your account...";
+
+  try {
+    const { data, error } = await supabaseClient.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
 
     if (error) {
-      errorEl.textContent = error.message || "Auth error";
+      const msg = (error.message || "").toLowerCase();
+
+      // If user already exists, we treat this as a login attempt via magic link
+      if (msg.includes("already registered") || msg.includes("user already exists")) {
+        await sendMagicLink(email, errorEl);
+        return;
+      }
+
+      console.error("Sign-up error:", error);
+      errorEl.textContent = error.message || "Sign-up error.";
       return;
     }
 
-    if (data.session) {
+    // Remember that this email has an account (optional but nice to have)
+    localStorage.setItem("dashboardMagicEmail", email);
+
+    if (data.session && data.session.user) {
+      // Email confirmation disabled: user is already logged in
       currentUser = data.session.user;
       errorEl.textContent = "";
       updateAuthUI();
       await loadDashboardState();
       renderDashboard();
     } else {
-      errorEl.textContent = "Check your email to complete sign in.";
+      // Email confirmation enabled: they must click the verification email
+      errorEl.textContent =
+        "Account created. Check your email to confirm. After that, use the magic link to log in.";
     }
   } catch (e) {
-    console.error(e);
+    console.error("Unexpected sign-up error:", e);
     errorEl.textContent = "Unexpected error.";
   }
 }
@@ -905,6 +931,39 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
+async function sendMagicLink(email, statusEl) {
+  if (!supabaseClient) {
+    if (statusEl) statusEl.textContent = "Supabase is not configured.";
+    return;
+  }
+
+  if (statusEl) statusEl.textContent = "Sending magic link...";
+
+  try {
+    const { error } = await supabaseClient.auth.signInWithOtp({
+      email,
+      options: {
+        // where Supabase will redirect after the user clicks the email link
+        emailRedirectTo: window.location.origin,
+      },
+    });
+
+    if (error) {
+      console.error("Magic link error:", error);
+      if (statusEl) statusEl.textContent = error.message || "Could not send magic link.";
+      return;
+    }
+
+    if (statusEl) {
+      statusEl.textContent = "Magic link sent. Check your email to log in.";
+    }
+  } catch (e) {
+    console.error("sendMagicLink exception:", e);
+    if (statusEl) statusEl.textContent = "Unexpected error sending magic link.";
+  }
+}
+
+
 /*
 Supabase table (run in SQL editor):
 
@@ -931,3 +990,4 @@ create policy "dashboard_state_upsert" on public.dashboard_state
 create policy "dashboard_state_update" on public.dashboard_state
   for update using (auth.uid() = user_id);
 */
+
