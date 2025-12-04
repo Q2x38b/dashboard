@@ -941,6 +941,24 @@ a {
   gap: 0.45rem;
 }
 
+.offline-pill {
+  display: none;
+  border: 1px dashed var(--border-color);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-family: var(--font-geist-mono);
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.offline-pill--visible {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
 /* Nudge search button slightly to the right */
 .header-right .spotlight-trigger {
   margin-left: 6px;
@@ -3471,6 +3489,31 @@ textarea:-webkit-autofill:focus {
 
 .auth-submit:hover {
   background-color: var(--hover-bg);
+}
+
+.auth-offline {
+  display: none;
+  margin-top: 0.2rem;
+  width: 100%;
+  border-radius: 0.45rem;
+  border: 1px dashed var(--border-color);
+  background-color: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-geist-mono);
+  font-size: 0.75rem;
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.auth-offline:hover {
+  background-color: var(--hover-bg);
+}
+
+.auth-offline-hint {
+  display: none;
+  margin-top: -0.2rem;
+  color: var(--text-secondary);
 }
 
 .auth-hint {
