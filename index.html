@@ -1,1 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <title>Personal Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+  <!-- Your big CSS from the prompt should be in styles.css -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Supabase JS v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="animate-in">
+  <!-- Auth overlay -->
+  <div id="auth-overlay" class="auth-overlay auth-overlay--visible">
+    <div class="auth-card">
+      <div class="auth-card-header">
+        <h1 class="auth-title">Welcome back</h1>
+        <p class="auth-subtitle">Sign in to your dashboard</p>
+      </div>
+      <div class="auth-card-body">
+        <div class="auth-field">
+          <label for="auth-email">Email</label>
+          <input id="auth-email" type="email" placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <div class="auth-field">
+          <label for="auth-password">Password</label>
+          <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+        <button id="auth-submit" class="auth-submit">
+          Continue
+        </button>
+        <p class="auth-hint">
+          If this is your first time, an account will be created automatically.
+        </p>
+        <p id="auth-error" class="auth-error"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dashboard-root">
+    <header class="dashboard-header header">
+      <div class="dashboard-header-left">
+        <div class="profile">
+          <div class="profile-title geist-mono-font">Personal dashboard</div>
+          <div class="profile-name">Your week at a glance</div>
+        </div>
+      </div>
+
+      <div class="dashboard-header-right header-right">
+        <button id="theme-toggle" class="theme-switch" aria-label="Toggle theme">
+          <svg class="theme-icon" viewBox="0 0 24 24">
+            <circle class="sun-circle" cx="12" cy="12" r="5"></circle>
+            <g class="sun-rays">
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </g>
+            <path class="moon-path" d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        </button>
+
+        <button id="logout-btn" class="social-button" style="width:auto;padding:0 0.75rem;">
+          <span class="social-button-bg"></span>
+          <span class="social-button-inner geist-mono-font" style="font-size:0.7rem;">Logout</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="dashboard-main">
+      <div id="dashboard-grid" class="dashboard-grid">
+        <!-- widgets rendered by JS -->
+      </div>
+    </main>
+
+    <!-- Widgets FAB -->
+    <button id="widgets-fab" class="widgets-fab" title="Edit & add widgets">
+      <span class="widgets-fab-icon">⚙️</span>
+    </button>
+
+    <!-- Widgets panel -->
+    <div id="widgets-panel" class="widgets-panel">
+      <div class="widgets-panel-header">
+        <span class="widgets-panel-title">Dashboard widgets</span>
+        <button id="widgets-panel-close" class="widgets-panel-close" aria-label="Close">
+          ✕
+        </button>
+      </div>
+      <div class="widgets-panel-body">
+        <p class="widgets-panel-subtitle">Add or remove widgets on your dashboard.</p>
+        <div class="widgets-panel-grid">
+          <button class="widgets-panel-item" data-widget-type="weeklyTodo">
+            <span class="widgets-panel-item-title">Weekly To-Do</span>
+            <span class="widgets-panel-item-desc">Tasks grouped by day</span>
+          </button>
+          <button class="widgets-panel-item" data-widget-type="appDock">
+            <span class="widgets-panel-item-title">App Dock</span>
+            <span class="widgets-panel-item-desc">Quick links with favicons</span>
+          </button>
+          <button class="widgets-panel-item" data-widget-type="pomodoro">
+            <span class="widgets-panel-item-title">Pomodoro Timer</span>
+            <span class="widgets-panel-item-desc">Focus / break cycles</span>
+          </button>
+          <button class="widgets-panel-item" data-widget-type="notes">
+            <span class="widgets-panel-item-title">Notes</span>
+            <span class="widgets-panel-item-desc">Scratch pad</span>
+          </button>
+          <button class="widgets-panel-item" data-widget-type="stats">
+            <span class="widgets-panel-item-title">Weekly Stats</span>
+            <span class="widgets-panel-item-desc">Completed tasks summary</span>
+          </button>
+        </div>
+        <p class="widgets-panel-hint geist-mono-font">
+          Tip: click the ⚙️ button again to toggle edit mode (reorder / delete widgets).
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
