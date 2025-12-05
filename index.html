@@ -84,14 +84,40 @@
     </header>
 
     <main class="dashboard-main">
-      <div id="dashboard-grid" class="dashboard-grid">
+      <div id="dashboard-grid" class="dashboard-grid" aria-live="polite">
         <!-- widgets rendered by JS -->
       </div>
     </main>
 
+    <div id="dock-bar" class="dock-bar" aria-label="App dock">
+      <div class="dock-bar-shell">
+        <div id="dock-bar-items" class="dock-bar-items">
+          <!-- dock items -->
+        </div>
+        <button id="dock-bar-add" class="dock-bar-add" aria-haspopup="true" aria-expanded="false" title="Add app">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+      <form id="dock-bar-form" class="dock-bar-form" autocomplete="off">
+        <input type="text" id="dock-label-input" placeholder="Label" aria-label="App label" />
+        <input type="url" id="dock-url-input" placeholder="https://app.url" aria-label="App URL" required />
+        <button type="submit">Save</button>
+      </form>
+    </div>
+
     <!-- Widgets FAB -->
-    <button id="widgets-fab" class="widgets-fab" title="Edit & add widgets">
-      <span class="widgets-fab-icon">⚙️</span>
+    <button id="widgets-fab" class="widgets-fab" title="Edit & add widgets" aria-pressed="false">
+      <svg class="widgets-fab-icon widgets-fab-icon--gear" viewBox="0 0 24 24" role="img" aria-label="Toggle edit mode">
+        <path
+          d="M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Zm7.4 1.81a1 1 0 0 0 .2-1.09l-.4-.93a1 1 0 0 0-1.02-.6l-1.2.12a6.78 6.78 0 0 0-1.04-.6l-.37-1.16a1 1 0 0 0-.88-.7h-1a1 1 0 0 0-.9.7l-.36 1.16c-.36.16-.7.36-1.03.6l-1.2-.12a1 1 0 0 0-1.02.6l-.41.94a1 1 0 0 0 .2 1.08l.92.71a5.68 5.68 0 0 0 0 1.2l-.92.71a1 1 0 0 0-.2 1.08l.42.94a1 1 0 0 0 1.02.6l1.2-.12c.33.24.67.45 1.03.6l.36 1.16a1 1 0 0 0 .9.7h1a1 1 0 0 0 .89-.7l.37-1.16c.36-.15.7-.35 1.04-.6l1.2.12a1 1 0 0 0 1.02-.6l.4-.94a1 1 0 0 0-.2-1.08l-.93-.71c.03-.2.04-.4.04-.6s-.01-.4-.04-.6Z"
+          fill="currentColor"
+        />
+      </svg>
+      <svg class="widgets-fab-icon widgets-fab-icon--check" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m6 12 4 4 8-8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
     </button>
 
     <!-- Widgets panel -->
@@ -109,9 +135,9 @@
             <span class="widgets-panel-item-title">Weekly To-Do</span>
             <span class="widgets-panel-item-desc">Tasks grouped by day</span>
           </button>
-          <button class="widgets-panel-item" data-widget-type="appDock">
-            <span class="widgets-panel-item-title">App Dock</span>
-            <span class="widgets-panel-item-desc">Quick links with favicons</span>
+          <button class="widgets-panel-item" data-widget-type="upcoming">
+            <span class="widgets-panel-item-title">Upcoming Week</span>
+            <span class="widgets-panel-item-desc">Events & countdowns</span>
           </button>
           <button class="widgets-panel-item" data-widget-type="pomodoro">
             <span class="widgets-panel-item-title">Pomodoro Timer</span>
@@ -119,11 +145,19 @@
           </button>
           <button class="widgets-panel-item" data-widget-type="notes">
             <span class="widgets-panel-item-title">Notes</span>
-            <span class="widgets-panel-item-desc">Scratch pad</span>
+            <span class="widgets-panel-item-desc">Markdown scratchpad</span>
+          </button>
+          <button class="widgets-panel-item" data-widget-type="habitTracker">
+            <span class="widgets-panel-item-title">Habit Tracker</span>
+            <span class="widgets-panel-item-desc">Daily rituals</span>
           </button>
           <button class="widgets-panel-item" data-widget-type="stats">
             <span class="widgets-panel-item-title">Weekly Stats</span>
             <span class="widgets-panel-item-desc">Completed tasks summary</span>
+          </button>
+          <button class="widgets-panel-item" data-widget-type="dailyBrief">
+            <span class="widgets-panel-item-title">Daily Brief</span>
+            <span class="widgets-panel-item-desc">Quick pulse & actions</span>
           </button>
         </div>
         <p class="widgets-panel-hint geist-mono-font">
